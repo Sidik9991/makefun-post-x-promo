@@ -64,4 +64,18 @@ try {
   fail(`cannot copy POST.json to ${outputPath}: ${(err as Error).message}`);
 }
 
-console.log(`main.ts: copied POST.json to ${outputPath} (url: ${url})`);
+// Verify the copy: re-read /output/POST.json and byte-compare it with
+// the source. A truncated or altered copy must never reach the scorer,
+// so any mismatch (or an unreadable copy) is fatal.
+let copied: Buffer;
+try {
+  copied = readFileSync(outputPath);
+} catch (err) {
+  fail(`cannot re-read ${outputPath} for verification: ${(err as Error).message}`);
+}
+const sourceBytes = readFileSync(sourcePath);
+if (!copied!.equals(sourceBytes)) {
+  fail(`verification failed: ${outputPath} differs from ${sourcePath} (${copied!.length} bytes vs ${sourceBytes.length} bytes)`);
+}
+
+console.log(`main.ts: copied POST.json to ${outputPath} (url: ${url}) and verified it byte for byte (${sourceBytes.length} bytes)`);
